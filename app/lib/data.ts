@@ -1,4 +1,6 @@
 import { sql } from '@vercel/postgres';
+
+import { createClient } from '@supabase/supabase-js'
 import {
   CustomerField,
   CustomersTableType,
@@ -9,7 +11,17 @@ import {
 } from './definitions';
 import { formatCurrency } from './utils';
 
+
+
 export async function fetchRevenue() {
+  const supabase = createClient("https://ckaqneuqpadsdomnzxww.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYXFuZXVxcGFkc2RvbW56eHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4MjIzMzMsImV4cCI6MjA0NzM5ODMzM30.nxXTmnteo_RK34emavEGnKylLMQsKcIHTa5S3JKgRGE")
+  const { data, error } = await supabase.from('revenue').select()
+  console.log(data)
+  return data;
+}
+
+export async function fetchRevenue2() {
+  // fetchRevenueSupabase();
   try {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
