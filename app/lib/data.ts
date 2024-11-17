@@ -13,11 +13,17 @@ import { formatCurrency } from './utils';
 
 
 
-export async function fetchRevenue() {
+export async function fetchRevenue(): Promise<Revenue[]> {
   const supabase = createClient("https://ckaqneuqpadsdomnzxww.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYXFuZXVxcGFkc2RvbW56eHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4MjIzMzMsImV4cCI6MjA0NzM5ODMzM30.nxXTmnteo_RK34emavEGnKylLMQsKcIHTa5S3JKgRGE")
   const { data, error } = await supabase.from('revenue').select()
   console.log(data)
-  return data;
+  // Ensure the data is an array of Revenue objects
+  if (data && Array.isArray(data)) {
+    return data as Revenue[];
+  }
+
+  // If no rows are found, return an empty array
+  return [];
 }
 
 export async function fetchRevenue2() {
