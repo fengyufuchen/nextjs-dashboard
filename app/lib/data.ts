@@ -16,7 +16,6 @@ import { formatCurrency } from './utils';
 export async function fetchRevenue(): Promise<Revenue[]> {
   const supabase = createClient("https://ckaqneuqpadsdomnzxww.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYXFuZXVxcGFkc2RvbW56eHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4MjIzMzMsImV4cCI6MjA0NzM5ODMzM30.nxXTmnteo_RK34emavEGnKylLMQsKcIHTa5S3JKgRGE")
   const { data, error } = await supabase.from('revenue').select()
-  console.log(data)
   // Ensure the data is an array of Revenue objects
   if (data && Array.isArray(data)) {
     return data as Revenue[];
@@ -46,7 +45,37 @@ export async function fetchRevenue2() {
   }
 }
 
+export async function fetchLatestInvoices2() {
+  const supabase = createClient("https://ckaqneuqpadsdomnzxww.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYXFuZXVxcGFkc2RvbW56eHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4MjIzMzMsImV4cCI6MjA0NzM5ODMzM30.nxXTmnteo_RK34emavEGnKylLMQsKcIHTa5S3JKgRGE")
+
+  // const { data, error } = await supabase
+  //   .from('customers')
+  //   .select(`
+  //        invoices.amount, customers.name, customers.image_url, customers.email, invoices.id,
+  //       invoices (
+  //         customer_id
+  //       )
+  //     `).order('invoices.date', { ascending: false });;
+  const { data, error } = await supabase
+    .from('invoices')
+    .select(`
+                amount,
+                id,
+                customers (
+                    name,
+                    image_url,
+                    email
+                )
+            `)
+    .order('date', { ascending: false })
+    .limit(5);
+
+  console.log("fetchLatestInvoices2", data)
+
+}
+
 export async function fetchLatestInvoices() {
+  fetchLatestInvoices2();
   try {
     const data = await sql<LatestInvoiceRaw>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
@@ -54,7 +83,6 @@ export async function fetchLatestInvoices() {
       JOIN customers ON invoices.customer_id = customers.id
       ORDER BY invoices.date DESC
       LIMIT 5`;
-
     const latestInvoices = data.rows.map((invoice) => ({
       ...invoice,
       amount: formatCurrency(invoice.amount),
