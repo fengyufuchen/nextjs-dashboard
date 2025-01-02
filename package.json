@@ -4,7 +4,8 @@
     "build": "next build",
     "dev": " next dev --turbo",
     "debugDev": " cross-env  NODE_OPTIONS='--inspect'  next dev --turbo",
-    "start": "next start"
+    "start": "next start",
+    "info": " next info"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.4",
