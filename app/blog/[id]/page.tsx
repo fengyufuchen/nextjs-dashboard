@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface PageParams {
   params: {
     id: string;
@@ -29,7 +31,13 @@ interface PageParams {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  return <h1>My Page</h1>;
+  const { id } = await params;
+  return (
+    <>
+      <h1>My Page{id}</h1>
+      <Link href={`/photo/${id}`}>go {`/photo/${id}`}</Link>
+    </>
+  );
 }

@@ -1,6 +1,8 @@
 import { sql } from '@vercel/postgres';
-
-import { createClient } from '@supabase/supabase-js'
+import { db } from "@vercel/postgres"
+import { createClient as createSupbaseClient } from '@/app/utils/supabase/client';
+import { createClient as createServerClient } from '@/app/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import {
   CustomerField,
   CustomersTableType,
@@ -11,10 +13,16 @@ import {
 } from './definitions';
 import { formatCurrency } from './utils';
 
+const client = await db.connect();
+client.on('error', (err) => { console.error('========================================>Unexpected error on idle client', err) })
 
+
+export const dbClient = client;
 
 export async function fetchRevenue(): Promise<Revenue[]> {
-  const supabase = createClient("https://ckaqneuqpadsdomnzxww.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrYXFuZXVxcGFkc2RvbW56eHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4MjIzMzMsImV4cCI6MjA0NzM5ODMzM30.nxXTmnteo_RK34emavEGnKylLMQsKcIHTa5S3JKgRGE")
+
+  const supabase = createSupbaseClient();
+  console.log("supabase", supabase)
   const { data, error } = await supabase.from('revenue').select()
   // Ensure the data is an array of Revenue objects
   if (data && Array.isArray(data)) {
@@ -24,6 +32,22 @@ export async function fetchRevenue(): Promise<Revenue[]> {
   // If no rows are found, return an empty array
   return [];
 }
+
+
+export async function fetchRevenueServerSide(): Promise<Revenue[]> {
+  const supabase = createServerClient();
+
+  const { data, error } = await (await supabase).from('revenue').select()
+  // Ensure the data is an array of Revenue objects
+  if (data && Array.isArray(data)) {
+    return data as Revenue[];
+  }
+
+  // If no rows are found, return an empty array
+  return [];
+}
+
+
 
 export async function fetchRevenue2() {
   // fetchRevenueSupabase();
@@ -75,9 +99,9 @@ export async function fetchLatestInvoices2() {
 }
 
 export async function fetchLatestInvoices() {
-  fetchLatestInvoices2();
+  // fetchLatestInvoices2();
   try {
-    const data = await sql<LatestInvoiceRaw>`
+    const data = await client.sql<LatestInvoiceRaw>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
       JOIN customers ON invoices.customer_id = customers.id
@@ -90,7 +114,7 @@ export async function fetchLatestInvoices() {
     return latestInvoices;
   } catch (error) {
     console.error('Database Error:', error);
-    throw new Error('Failed to fetch the latest invoices.');
+    throw error; throw new Error('Failed to fetch the latest invoices.');
   }
 }
 
@@ -99,9 +123,9 @@ export async function fetchCardData() {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
-    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
-    const invoiceStatusPromise = sql`SELECT
+    const invoiceCountPromise = client.sql`SELECT COUNT(*) FROM invoices`;
+    const customerCountPromise = client.sql`SELECT COUNT(*) FROM customers`;
+    const invoiceStatusPromise = client.sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
          FROM invoices`;
@@ -137,7 +161,7 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await sql<InvoicesTable>`
+    const invoices = await client.sql<InvoicesTable>`
       SELECT
         invoices.id,
         invoices.amount,
@@ -167,7 +191,7 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
-    const count = await sql`SELECT COUNT(*)
+    const count = await client.sql`SELECT COUNT(*)
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
     WHERE
@@ -188,7 +212,7 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
-    const data = await sql<InvoiceForm>`
+    const data = await client.sql<InvoiceForm>`
       SELECT
         invoices.id,
         invoices.customer_id,
@@ -213,7 +237,7 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const data = await sql<CustomerField>`
+    const data = await client.sql<CustomerField>`
       SELECT
         id,
         name
